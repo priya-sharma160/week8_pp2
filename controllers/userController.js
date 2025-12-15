@@ -12,15 +12,19 @@ const generateToken = (_id) => {
 // @route   POST /api/users/signup
 // @access  Public
 const signupUser = async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, phone_number, gender, date_of_birth, membership_status } = req.body;
 
   try {
-    const user = await User.signup(name, email, password);
+    // Signup user (User model handles validation)
+    const user = await User.signup(name, email, password, phone_number, gender, date_of_birth, membership_status);
 
     // create a token
     const token = generateToken(user._id);
 
-    res.status(201).json({ email, token });
+    // Return full user info except password
+    const { password: _, ...userData } = user.toObject();
+
+    res.status(201).json({ user: userData, token });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -31,17 +35,17 @@ const signupUser = async (req, res) => {
 // @access  Public
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
+
   try {
     const user = await User.login(email, password);
 
-    if (user) {
-      // create a token
-      const token = generateToken(user._id);
-      res.status(200).json({ email, token });
-    } else {
-      res.status(400);
-      throw new Error("Invalid credentials");
-    }
+    // create a token
+    const token = generateToken(user._id);
+
+    // Return full user info except password
+    const { password: _, ...userData } = user.toObject();
+
+    res.status(200).json({ user: userData, token });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -52,7 +56,9 @@ const loginUser = async (req, res) => {
 // @access  Private
 const getMe = async (req, res) => {
   try {
-    res.status(200).json(req.user);
+    // Return full user info except password
+    const { password: _, ...userData } = req.user.toObject();
+    res.status(200).json(userData);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
