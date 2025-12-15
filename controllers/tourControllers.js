@@ -25,19 +25,14 @@ const createTour = async (req, res) => {
 
 // GET /tours/:tourId
 const getTourById = async (req, res) => {
-  const { tourId } = req.params;
-
-  if (!mongoose.Types.ObjectId.isValid(tourId)) {
-    return res.status(400).json({ message: "Invalid tour ID" });
-  }
-
   try {
-    const tour = await Tour.findById(tourId);
-    if (tour) {
-      res.status(200).json(tour);
-    } else {
-      res.status(404).json({ message: "Tour not found" });
+    const user_id = req.user._id;
+    const { id } = req.params;
+    const tour = await Tour.findOne({ _id: id, user_id });
+    if (!tour) {
+      return res.status(404).json({ message: "Tour not found or not authorized" });
     }
+    res.status(200).json(tour);
   } catch (error) {
     res.status(500).json({ message: "Failed to retrieve tour" });
   }
@@ -45,48 +40,37 @@ const getTourById = async (req, res) => {
 
 // PUT /tours/:tourId
 const updateTour = async (req, res) => {
-  const { tourId } = req.params;
-
-  if (!mongoose.Types.ObjectId.isValid(tourId)) {
-    return res.status(400).json({ message: "Invalid tour ID" });
-  }
-
   try {
+    const user_id = req.user._id;
+    const { id } = req.params;
     const updatedTour = await Tour.findOneAndUpdate(
-      { _id: tourId },
+      { _id: id, user_id },
       { ...req.body },
-      { new: true }
+      { new: true, runValidators: true }
     );
-    if (updatedTour) {
-      res.status(200).json(updatedTour);
-    } else {
-      res.status(404).json({ message: "Tour not found" });
+    if (!updatedTour) {
+      return res.status(404).json({ message: "Tour not found or not authorized" });
     }
+    res.status(200).json(updatedTour);
   } catch (error) {
-    res.status(500).json({ message: "Failed to update tour" });
+    res.status(400).json({ message: "Failed to update tour", error: error.message });
   }
 };
 
 // DELETE /tours/:tourId
 const deleteTour = async (req, res) => {
-  const { tourId } = req.params;
-
-  if (!mongoose.Types.ObjectId.isValid(tourId)) {
-    return res.status(400).json({ message: "Invalid tour ID" });
-  }
-
   try {
-    const deletedTour = await Tour.findOneAndDelete({ _id: tourId });
-    if (deletedTour) {
-      res.status(204).send(); // 204 No Content
-    } else {
-      res.status(404).json({ message: "Tour not found" });
+    const user_id = req.user._id;
+    const { id } = req.params;
+    const deletedTour = await Tour.findOneAndDelete({ _id: id, user_id });
+    if (!deletedTour) {
+      return res.status(404).json({ message: "Tour not found or not authorized" });
     }
+    res.status(200).json({ message: "Tour deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: "Failed to delete tour" });
   }
 };
-
 module.exports = {
   getAllTours,
   getTourById,
