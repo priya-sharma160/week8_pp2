@@ -4,7 +4,8 @@ const mongoose = require("mongoose");
 // GET /tours
 const getAllTours = async (req, res) => {
   try {
-    const tours = await Tour.find({}).sort({ createdAt: -1 });
+    const user_id = req.user._id;
+    const tours = await Tour.find({ user_id }).sort({ createdAt: -1 });
     res.status(200).json(tours);
   } catch (error) {
     res.status(500).json({ message: "Failed to retrieve tours" });
@@ -14,7 +15,8 @@ const getAllTours = async (req, res) => {
 // POST /tours
 const createTour = async (req, res) => {
   try {
-    const newTour = await Tour.create({ ...req.body });
+    const user_id = req.user._id;
+    const newTour = await Tour.create({ ...req.body, user_id });
     res.status(201).json(newTour);
   } catch (error) {
     res.status(400).json({ message: "Failed to create tour", error: error.message });
